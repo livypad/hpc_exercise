@@ -4,8 +4,8 @@
 #include "common.h"
 
 TEST(TEST3_2, Test1) {
-  const int m = 2;
-  const int n = 1;
+  const int m = 20;
+  const int n = 10;
   auto *a = new double[m * n];
   for (int i = 0; i < m * n; ++i) {
     a[i] = UniformReal(1.0, 100.0);

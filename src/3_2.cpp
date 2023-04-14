@@ -1,5 +1,6 @@
 #include <cblas.h>
 #include <mpi.h>
+#include <cstdlib>
 #include <cstring>
 template <typename T>
 void MatVecMul(int m, int n, T *A, T *B, T *C, T *x) {
@@ -31,24 +32,58 @@ void MatVecMPI(int m, int n, double *A, double *B, double *C, double *x) {
   int size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  //  printf("rank = %d, size = %d\n", rank, size);
+
   int m_per_proc = m / size;
   int m_last_proc = m - m_per_proc * (size - 1);
   int m_this_proc = (rank == size - 1) ? m_last_proc : m_per_proc;
+
+  int *displs1;
+  int *displs2;
+  int *counts1;
+  int *counts2;
+
+  if (rank == 0) {
+    displs1 = new int[size];
+    counts1 = new int[size];
+    displs2 = new int[size];
+    counts2 = new int[size];
+    for (int i = 0; i < size; i++) {
+      displs1[i] = i * m_per_proc;
+      counts1[i] = i == size - 1 ? m_last_proc : m_per_proc;
+
+      displs2[i] = i * m_per_proc * n;
+      counts2[i] = i == size - 1 ? m_last_proc * n : m_per_proc * n;
+    }
+  }
+
   auto *a_this_proc = new double[m_this_proc * n];
   auto *b_this_proc = new double[m_this_proc];
   auto *c_this_proc = new double[m_this_proc];
 
-  MPI_Scatter(A, m_per_proc * n, MPI_DOUBLE, a_this_proc, m_per_proc * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Scatter(B, m_per_proc, MPI_DOUBLE, b_this_proc, m_per_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);  // 等待进程0（root进程）的counts和displs数组设置完成
+  // A，B，x需要从进程0（root进程）广播到其他进程，因为每个进程的A，B，x都是随机初始化的，一般是不同的
+  MPI_Scatterv(A, counts2, displs2, MPI_DOUBLE, a_this_proc, m_this_proc * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(B, counts1, displs1, MPI_DOUBLE, b_this_proc, m_this_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   MatVecMul(m_this_proc, n, a_this_proc, b_this_proc, c_this_proc, x);
 
-  MPI_Gather(c_this_proc, m_this_proc, MPI_DOUBLE, C, m_this_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(c_this_proc, m_this_proc, MPI_DOUBLE, C, counts1, displs1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   MPI_Finalize();
+
   delete[] a_this_proc;
   delete[] b_this_proc;
   delete[] c_this_proc;
+
+  if (rank != 0) {
+    // 其他进程退出，不要干扰最后的判断
+    exit(0);
+  } else {
+    delete[] displs1;
+    delete[] counts1;
+    delete[] displs2;
+    delete[] counts2;
+  }
 }
 
 void MatVecBlas(int m, int n, double *A, double *B, double *C, double *x) {
