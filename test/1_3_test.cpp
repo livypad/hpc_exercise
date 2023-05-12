@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-TEST(TEST1_3, Test1) {
+TEST(TEST1_3, RightTest) {
   const int n = 10;
   double x = UniformReal(2.0, 10.0);
 

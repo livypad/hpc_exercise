@@ -18,8 +18,8 @@ include(GoogleTest)
 
 file(GLOB_RECURSE HPC_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/*test.cpp")
 message(STATUS "HPC_TEST_SOURCES: ${HPC_TEST_SOURCES}")
-#add_custom_target(build-tests COMMAND ${CMAKE_CTEST_COMMAND} --show-only)
-#add_custom_target(check-tests COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
+add_custom_target(build-tests COMMAND ${CMAKE_CTEST_COMMAND} --show-only)
+add_custom_target(check-tests COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 foreach (hpc_test_source ${HPC_TEST_SOURCES})
     # Create a human readable name.
     get_filename_component(hpc_test_filename ${hpc_test_source} NAME)
@@ -27,8 +27,8 @@ foreach (hpc_test_source ${HPC_TEST_SOURCES})
 
     # Add the test target separately and as part of "make check-tests".
     add_executable(${hpc_test_name} EXCLUDE_FROM_ALL ${hpc_test_source})
-    #    add_dependencies(build-tests ${hpc_test_name})
-    #    add_dependencies(check-tests ${hpc_test_name})
+    add_dependencies(build-tests ${hpc_test_name})
+    add_dependencies(check-tests ${hpc_test_name})
 
     gtest_discover_tests(${hpc_test_name}
             EXTRA_ARGS

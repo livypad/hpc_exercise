@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-TEST(TEST3_2, Test1) {
+TEST(TEST3_2, RightTest) {
   const int m = 20;
   const int n = 10;
   auto *a = new double[m * n];

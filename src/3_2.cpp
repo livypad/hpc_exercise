@@ -1,7 +1,5 @@
+#include "common.h"
 #include <cblas.h>
-#include <mpi.h>
-#include <cstdlib>
-#include <cstring>
 template <typename T>
 void MatVecMul(int m, int n, T *A, T *B, T *C, T *x) {
   for (int i = 0; i < m; i++) {

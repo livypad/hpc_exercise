@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "common.h"
-TEST(TEST1_1, Right) {
+TEST(TEST1_1, RightTest) {
   int m = 300;
   int n = 100;
   double *A = new double[m * n];
@@ -28,7 +28,7 @@ TEST(TEST1_1, Right) {
     }
   }
 }
-TEST(TEST1_1, Benchmark) {
+TEST(TEST1_1, BenchmarkTest) {
   int m = 10000;
   int n = 10000;
   int test_num =3;
