@@ -98,15 +98,11 @@ void GaussSeidelRowMPICol(double *A, double *B, double *x, double eps, int n) {
   int n_this_proc = (rank == size - 1) ? n_last_proc : n_per_proc;
   LOG_DEBUG("rank: %d, size: %d,n_this_proc: %d", rank, size, n_this_proc);
 
-  int *displs1;
-  int *displs2;
-  int *counts1;
-  int *counts2;
+  auto displs1 = new int[size];
+  auto displs2 = new int[size];
+  auto counts1 = new int[size];
+  auto counts2 = new int[size];
 
-  displs1 = new int[size];
-  counts1 = new int[size];
-  displs2 = new int[size];
-  counts2 = new int[size];
   for (int i = 0; i < size; i++) {
     displs1[i] = i * n_per_proc * n;
     counts1[i] = i == size - 1 ? n_last_proc * n : n_per_proc * n;
@@ -116,7 +112,7 @@ void GaussSeidelRowMPICol(double *A, double *B, double *x, double eps, int n) {
   }
   LOG_DEBUG("displs1: %d, counts1: %d, displs2: %d, counts2: %d", displs1[0], counts1[0], displs2[0], counts2[0]);
 
-  auto a_local = new double[n * n * n_this_proc];
+  auto a_local = new double[n * n_this_proc];
   auto x_local = new double[n_this_proc];
 
   auto x_new = new double[n_this_proc];

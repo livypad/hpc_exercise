@@ -39,7 +39,7 @@ TEST(TEST4_1, RightTest) {
   for (int i = 0; i < n; ++i) {
     EXPECT_LT(fabs(x[i] - eigen_x[i]), 0.01);
   }
-  
+
   GaussSeidelRowMPICol(a_trans, b, mpi_x, 0.000001, n);
   BadGaussSeidel<double>(a, b, bad_x, 0.000001, n);
   for (int i = 0; i < n; ++i) {
