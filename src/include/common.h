@@ -31,3 +31,4 @@ void GaussSeidelRowMPICol(double *A, double *B, double *x, double eps, int n);
 
 template <typename T>
 void TriangleMatrixSolve(T *A, T *b, T *x, int n);
+void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n);
