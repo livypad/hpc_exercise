@@ -1,9 +1,10 @@
 #pragma once
 
 #include <mpi.h>
+#include <memory>
+#include <complex>
 #include <cstdlib>
 #include <cstring>
-#include <complex>
 
 #include "logger.h"
 
@@ -35,6 +36,11 @@ void TriangleMatrixSolve(T *A, T *b, T *x, int n);
 void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n);
 
 template <typename T>
-auto RootOfXn(int n) -> std::complex<T>*;
+auto RootOfXn(int n) -> std::complex<T> *;
 template <typename T>
-auto RootOfXnAc(int n) -> std::complex<T>*;
+auto RootOfXnAc(int n) -> std::complex<T> *;
+
+void BitReverse(int n, int *array);
+auto IntReverse(unsigned int x, int n) -> unsigned int;
+template <typename T>
+void BitReverseReOrder(int n, T *array);
