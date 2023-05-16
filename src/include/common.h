@@ -44,3 +44,5 @@ void BitReverse(int n, int *array);
 auto IntReverse(unsigned int x, int n) -> unsigned int;
 template <typename T>
 void BitReverseReOrder(int n, T *array);
+
+void MatVecMPICol(int m, int n, double *A, double *B, double *x, double *y);
