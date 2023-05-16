@@ -3,6 +3,7 @@
 #include <mpi.h>
 #include <cstdlib>
 #include <cstring>
+#include <complex>
 
 #include "logger.h"
 
@@ -32,3 +33,8 @@ void GaussSeidelRowMPICol(double *A, double *B, double *x, double eps, int n);
 template <typename T>
 void TriangleMatrixSolve(T *A, T *b, T *x, int n);
 void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n);
+
+template <typename T>
+auto RootOfXn(int n) -> std::complex<T>*;
+template <typename T>
+auto RootOfXnAc(int n) -> std::complex<T>*;
