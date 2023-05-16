@@ -187,7 +187,7 @@ void GaussSeidelRowMPICol(double *A, double *B, double *x, double eps, int n) {
 
   MPI_Finalize();
 
-  if (rank != 0) {
+  if (rank != RootID) {
     // 其他进程退出，不要干扰最后的判断
     exit(0);
   } else {

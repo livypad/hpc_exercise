@@ -75,7 +75,7 @@ void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y) {
   delete[] b_this_proc;
   delete[] c_this_proc;
 
-  if (rank != 0) {
+  if (rank != RootId) {
     // 其他进程退出，不要干扰最后的判断
     exit(0);
   } else {
