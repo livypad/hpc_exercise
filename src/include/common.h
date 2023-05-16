@@ -1,10 +1,10 @@
 #pragma once
 
 #include <mpi.h>
-#include <memory>
 #include <complex>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 #include "logger.h"
 
@@ -17,11 +17,11 @@ auto PolyResult(int n, const double *a, double x) -> double;
 auto Xn(int n, double x) -> double;
 
 template <typename T>
-void MatVecMul(int m, int n, T *A, T *B, T *C, T *x);
+void MatVecMul(int m, int n, T *A, T *B, T *x, T *y);
 template <typename T>
-void MatVecMulOmp(int m, int n, T *A, T *B, T *C, T *X);
-void MatVecBlas(int m, int n, double *A, double *B, double *C, double *x);
-void MatVecMPI(int m, int n, double *A, double *B, double *C, double *x);
+void MatVecMulOmp(int m, int n, T *A, T *B, T *X, T *y);
+void MatVecBlas(int m, int n, double *A, double *B, double *x, double *y);
+void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y);
 
 template <typename T>
 void GaussSeidelRow(T *A, T *B, T *x, T eps, int n);

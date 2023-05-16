@@ -1,22 +1,22 @@
 #include "common.h"
 #include <cblas.h>
 template <typename T>
-void MatVecMul(int m, int n, T *A, T *B, T *C, T *x) {
+void MatVecMul(int m, int n, T *A, T *B, T *x, T *y) {
   for (int i = 0; i < m; i++) {
-    C[i] = B[i];
+    y[i] = B[i];
     for (int j = 0; j < n; j++) {
-      C[i] += A[i * n + j] * x[j];
+      y[i] += A[i * n + j] * x[j];
     }
   }
 }
 template <typename T>
-void MatVecMulOmp(int m, int n, T *A, T *B, T *C, T *x) {
+void MatVecMulOmp(int m, int n, T *A, T *B, T *x, T *y) {
 #pragma omp parallel for firstprivate(m, n, A, B, C, x) default(none)
   for (int i = 0; i < m; i++) {
-    C[i] = B[i];
+    y[i] = B[i];
 #pragma omp parallel for reduction(+ : C[i]) firstprivate(i, n, A, x) default(none)
     for (int j = 0; j < n; j++) {
-      C[i] += A[i * n + j] * x[j];
+      y[i] += A[i * n + j] * x[j];
     }
   }
 }
@@ -24,7 +24,9 @@ void MatVecMulOmp(int m, int n, T *A, T *B, T *C, T *x) {
 template void MatVecMul<double>(int, int, double *, double *, double *, double *);
 template void MatVecMulOmp<double>(int, int, double *, double *, double *, double *);
 
-void MatVecMPI(int m, int n, double *A, double *B, double *C, double *x) {
+enum { RootId = 0 };
+
+void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y) {
   MPI_Init(nullptr, nullptr);
   int rank;
   int size;
@@ -60,13 +62,13 @@ void MatVecMPI(int m, int n, double *A, double *B, double *C, double *x) {
 
   MPI_Barrier(MPI_COMM_WORLD);  // 等待进程0（root进程）的counts和displs数组设置完成
   // A，B，x需要从进程0（root进程）广播到其他进程，因为每个进程的A，B，x都是随机初始化的，一般是不同的
-  MPI_Scatterv(A, counts2, displs2, MPI_DOUBLE, a_this_proc, m_this_proc * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Scatterv(B, counts1, displs1, MPI_DOUBLE, b_this_proc, m_this_proc, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(A, counts2, displs2, MPI_DOUBLE, a_this_proc, m_this_proc * n, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
+  MPI_Scatterv(B, counts1, displs1, MPI_DOUBLE, b_this_proc, m_this_proc, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
   MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  MatVecMul(m_this_proc, n, a_this_proc, b_this_proc, c_this_proc, x);
+  MatVecMul(m_this_proc, n, a_this_proc, b_this_proc, x, c_this_proc);
 
-  MPI_Gatherv(c_this_proc, m_this_proc, MPI_DOUBLE, C, counts1, displs1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(c_this_proc, m_this_proc, MPI_DOUBLE, y, counts1, displs1, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
   MPI_Finalize();
 
   delete[] a_this_proc;
@@ -84,7 +86,7 @@ void MatVecMPI(int m, int n, double *A, double *B, double *C, double *x) {
   }
 }
 
-void MatVecBlas(int m, int n, double *A, double *B, double *C, double *x) {
-  memcpy(C, B, sizeof(double) * m);
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, C, 1);
+void MatVecBlas(int m, int n, double *A, double *B, double *x, double *y) {
+  memcpy(y, B, sizeof(double) * m);
+  cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, y, 1);
 }
