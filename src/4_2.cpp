@@ -21,7 +21,13 @@ void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (size == 1) {
-    TriangleMatrixSolve<double>(A, b, x, n);
+    for (int i = 0; i < n; i++) {
+      double sum = 0;
+      for (int j = 0; j < i; j++) {
+        sum += A[i + j * n] * x[j];
+      }
+      x[i] = (b[i] - sum) / A[i * n + i];
+    }
   } else {
     int n_per_proc = (n + size - 1) / size;
     int rem = n - size * (n / size);
@@ -89,7 +95,7 @@ void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n) {
       MPI_Recv(v, size - 1, MPI_DOUBLE, (size - 1), MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    //循环接收x
+    // 循环接收x
     for (int i = 0; i < n / size; i++) {
       MPI_Gather(x_local + i, 1, MPI_DOUBLE, x + i * size, 1, MPI_DOUBLE, RootID, MPI_COMM_WORLD);
     }
