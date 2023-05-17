@@ -1,4 +1,3 @@
-#include <cblas.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include "include/common.h"
