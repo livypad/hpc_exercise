@@ -13,25 +13,19 @@ void MatVecMPICol(int m, int n, double *A, double *B, double *x, double *y) {
   int n_last_proc = n - n_per_proc * (size - 1);
   int n_this_proc = (rank == size - 1) ? n_last_proc : n_per_proc;
 
-  int *displs1;
-  int *displs2;
-  int *counts1;
-  int *counts2;
+  auto displs1 = new int[size];
+  auto displs2 = new int[size];
+  auto counts1 = new int[size];
+  auto counts2 = new int[size];
 
-  if (rank == RootId) {
-    displs1 = new int[size];
-    counts1 = new int[size];
-    displs2 = new int[size];
-    counts2 = new int[size];
-    for (int i = 0; i < size; i++) {
-      displs1[i] = i * n_per_proc;
-      counts1[i] = i == size - 1 ? n_last_proc : n_per_proc;
+  for (int i = 0; i < size; i++) {
+    displs1[i] = i * n_per_proc;
+    counts1[i] = i == size - 1 ? n_last_proc : n_per_proc;
 
-      displs2[i] = i * n_per_proc * m;
-      counts2[i] = i == size - 1 ? n_last_proc * m : n_per_proc * m;
-    }
-    std::memset(y, 0, m * sizeof(double));
+    displs2[i] = i * n_per_proc * m;
+    counts2[i] = i == size - 1 ? n_last_proc * m : n_per_proc * m;
   }
+  std::memset(y, 0, m * sizeof(double));
 
   auto *a_local = new double[n_this_proc * m];
   auto *x_local = new double[n_this_proc];
