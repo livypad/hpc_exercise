@@ -27,7 +27,7 @@ TEST(TEST7_1, RightTest) {
   auto *mpi_y = new double[m];
 
   MatVecMul<double>(m, n, a, b, x, y);
-  MatVecBlas(m, n, a, b, x, blas_y);
+  MatVecEigen(m, n, a, b, x, blas_y);
   MatVecMPICol(m, n, a_trans, b, x, mpi_y);
 
   for (int i = 0; i < m; ++i) {

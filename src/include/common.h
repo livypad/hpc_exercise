@@ -20,7 +20,7 @@ template <typename T>
 void MatVecMul(int m, int n, T *A, T *B, T *x, T *y);
 template <typename T>
 void MatVecMulOmp(int m, int n, T *A, T *B, T *X, T *y);
-void MatVecBlas(int m, int n, double *A, double *B, double *x, double *y);
+void MatVecEigen(int m, int n, double *A, double *B, double *x, double *y);
 void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y);
 
 template <typename T>

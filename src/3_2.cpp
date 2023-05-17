@@ -1,5 +1,8 @@
-#include "common.h"
 #include <cblas.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include "include/common.h"
+
 template <typename T>
 void MatVecMul(int m, int n, T *A, T *B, T *x, T *y) {
   for (int i = 0; i < m; i++) {
@@ -11,10 +14,10 @@ void MatVecMul(int m, int n, T *A, T *B, T *x, T *y) {
 }
 template <typename T>
 void MatVecMulOmp(int m, int n, T *A, T *B, T *x, T *y) {
-#pragma omp parallel for firstprivate(m, n, A, B, C, x) default(none)
+#pragma omp parallel for firstprivate(m, n, A, B, y, x) default(none)
   for (int i = 0; i < m; i++) {
     y[i] = B[i];
-#pragma omp parallel for reduction(+ : C[i]) firstprivate(i, n, A, x) default(none)
+#pragma omp parallel for reduction(+ : y[i]) firstprivate(i, n, A, x) default(none)
     for (int j = 0; j < n; j++) {
       y[i] += A[i * n + j] * x[j];
     }
@@ -86,7 +89,12 @@ void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y) {
   }
 }
 
-void MatVecBlas(int m, int n, double *A, double *B, double *x, double *y) {
-  memcpy(y, B, sizeof(double) * m);
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, y, 1);
+void MatVecEigen(int m, int n, double *A, double *B, double *x, double *y) {
+  // std::memcpy(y, B, sizeof(double) * m);
+  // cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, y, 1);
+  auto mat_a = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(A, m, n);
+  auto vec_x = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(x, n);
+  auto vec_b = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(B, m);
+  Eigen::Vector<double, Eigen::Dynamic> result = mat_a * vec_x + vec_b;
+  std::memcpy(y, result.data(), m * sizeof(double));
 }

@@ -25,7 +25,7 @@ TEST(TEST3_2, RightTest) {
 
   MatVecMul<double>(m, n, a, b, x, y);
   MatVecMulOmp<double>(m, n, a, b, x, omp_y);
-  MatVecBlas(m, n, a, b, x, blas_y);
+  MatVecEigen(m, n, a, b, x, blas_y);
   MatVecMPIRow(m, n, a, b, x, mpi_y);
 
   for (int i = 0; i < m; ++i) {
