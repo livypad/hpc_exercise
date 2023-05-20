@@ -45,4 +45,7 @@ auto IntReverse(unsigned int x, int n) -> unsigned int;
 template <typename T>
 void BitReverseReOrder(int n, T *array);
 
-void MatVecMPICol(int m, int n, double *A, double *B, double *x, double *y);
+void MatVecMPICol(int m, int n, double *A, const double *B, double *x, double *y);
+
+auto MyAll2All(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount,
+                MPI_Datatype recvtype, MPI_Comm comm) -> int;
