@@ -1,121 +1,97 @@
-#include "common.h"
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include "include/common.h"
 
 template <typename T>
-void TriangleMatrixSolve(T *A, T *b, T *x, int n) {
-  for (int i = 0; i < n; i++) {
-    T sum = 0;
-    for (int j = 0; j < i; j++) {
-      sum += A[i * n + j] * x[j];
+void MatVecMul(int m, int n, T *A, T *B, T *x, T *y) {
+  for (int i = 0; i < m; i++) {
+    y[i] = B[i];
+    for (int j = 0; j < n; j++) {
+      y[i] += A[i * n + j] * x[j];
     }
-    x[i] = (b[i] - sum) / A[i * n + i];
   }
 }
-template void TriangleMatrixSolve<double>(double *, double *, double *, int);
+template <typename T>
+void MatVecMulOmp(int m, int n, T *A, T *B, T *x, T *y) {
+#pragma omp parallel for firstprivate(m, n, A, B, y, x) default(none)
+  for (int i = 0; i < m; i++) {
+    y[i] = B[i];
+#pragma omp parallel for reduction(+ : y[i]) firstprivate(i, n, A, x) default(none)
+    for (int j = 0; j < n; j++) {
+      y[i] += A[i * n + j] * x[j];
+    }
+  }
+}
 
-enum { RootID = 0 };
+template void MatVecMul<double>(int, int, double *, double *, double *, double *);
+template void MatVecMulOmp<double>(int, int, double *, double *, double *, double *);
 
-void TriangleMatrixSolveMPI(double *A, double *b, double *x, int n) {
+enum { RootId = 0 };
+
+void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y) {
   MPI_Init(nullptr, nullptr);
   int rank;
   int size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if (size == 1) {
-    for (int i = 0; i < n; i++) {
-      double sum = 0;
-      for (int j = 0; j < i; j++) {
-        sum += A[i + j * n] * x[j];
-      }
-      x[i] = (b[i] - sum) / A[i * n + i];
-    }
-  } else {
-    int n_per_proc = (n + size - 1) / size;
-    int rem = n - size * (n / size);
-    int n_this_proc = rem == 0 || rank < rem ? n_per_proc : n_per_proc - 1;
-    LOG_DEBUG("rank: %d, size: %d,n_this_proc: %d", rank, size, n_this_proc);
 
-    auto displs1 = new int[size];
-    auto displs2 = new int[size];
-    auto counts1 = new int[size];
-    auto counts2 = new int[size];
+  int m_per_proc = m / size;
+  int m_last_proc = m - m_per_proc * (size - 1);
+  int m_this_proc = (rank == size - 1) ? m_last_proc : m_per_proc;
 
+  int *displs1;
+  int *displs2;
+  int *counts1;
+  int *counts2;
+
+  if (rank == 0) {
+    displs1 = new int[size];
+    counts1 = new int[size];
+    displs2 = new int[size];
+    counts2 = new int[size];
     for (int i = 0; i < size; i++) {
-      displs1[i] = i == 0 ? 0 : displs1[i - 1] + counts1[i - 1];
-      counts1[i] = rem == 0 || i < rem ? n : 0;
+      displs1[i] = i * m_per_proc;
+      counts1[i] = i == size - 1 ? m_last_proc : m_per_proc;
 
-      displs2[i] = i == 0 ? 0 : displs2[i - 1] + counts2[i - 1];
-      counts2[i] = rem == 0 || i < rem ? 1 : 0;
+      displs2[i] = i * m_per_proc * n;
+      counts2[i] = i == size - 1 ? m_last_proc * n : m_per_proc * n;
     }
-
-    auto u = new double[n];
-    auto v = new double[size - 1];
-
-    auto a_local = new double[n * n_per_proc];
-    std::memset(a_local, 0, n * n_per_proc * sizeof(double));
-    auto x_local = new double[n_per_proc];
-
-    // 按列循环发送A到各个进程
-    for (int i = 0; i < n / size; i++) {
-      MPI_Scatter(A + i * n * size, n, MPI_DOUBLE, a_local + i * n, n, MPI_DOUBLE, RootID, MPI_COMM_WORLD);
-    }
-    if (rem != 0) {
-      MPI_Scatterv(A + (n / size) * n * size, counts1, displs1, MPI_DOUBLE, a_local + (n_per_proc - 1) * n,
-                   counts1[rank], MPI_DOUBLE, RootID, MPI_COMM_WORLD);
-    }
-
-    if (rank == RootID) {
-      std::memcpy(u, b, n * sizeof(double));
-      std::memset(v, 0, (size - 1) * sizeof(double));
-    } else {
-      std::memset(u, 0, n * sizeof(double));
-    }
-
-    for (int i = rank; i < size * n_per_proc; i += size) {
-      if (i > 0) {
-        MPI_Recv(v, size - 1, MPI_DOUBLE, ((size + i - 1) % size), MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      }
-
-      int local_k = i / size;
-      x_local[local_k] = (u[i] + v[0]) / a_local[local_k * n + i];
-      LOG_DEBUG("rank=%d,x[%d] = %lf", rank, i, x_local[local_k]);
-
-      for (int j = 0; j < size - 2; j++) {
-        v[j] = i + j + 1 < n ? v[j + 1] + u[i + j + 1] - a_local[local_k * n + i + j + 1] * x_local[local_k] : v[j + 1];
-      }
-      v[size - 2] = i + size - 1 < n ? u[i + size - 1] - a_local[local_k * n + i + size - 1] * x_local[local_k] : 0;
-
-      for (int j = i + size; j < n; j++) {
-        u[j] -= a_local[local_k * n + j] * x_local[local_k];
-      }
-
-      MPI_Send(v, size - 1, MPI_DOUBLE, ((i + 1) % size), 1, MPI_COMM_WORLD);
-    }
-    // size-1号进程的send 到RootID也需要接收，匹配上recv和send
-    if (rank == 0) {
-      MPI_Recv(v, size - 1, MPI_DOUBLE, (size - 1), MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    // 循环接收x
-    for (int i = 0; i < n / size; i++) {
-      MPI_Gather(x_local + i, 1, MPI_DOUBLE, x + i * size, 1, MPI_DOUBLE, RootID, MPI_COMM_WORLD);
-    }
-    if (rem != 0) {
-      MPI_Gatherv(x_local + n / size, rank < rem ? 1 : 0, MPI_DOUBLE, x + size * (n / size), counts2, displs2,
-                  MPI_DOUBLE, RootID, MPI_COMM_WORLD);
-    }
-    delete[] displs1;
-    delete[] displs2;
-    delete[] counts1;
-    delete[] counts2;
-    delete[] a_local;
-    delete[] u;
-    delete[] v;
   }
 
+  auto *a_this_proc = new double[m_this_proc * n];
+  auto *b_this_proc = new double[m_this_proc];
+  auto *c_this_proc = new double[m_this_proc];
+
+  MPI_Barrier(MPI_COMM_WORLD);  // 等待进程0（root进程）的counts和displs数组设置完成
+  // A，B，x需要从进程0（root进程）广播到其他进程，因为每个进程的A，B，x都是随机初始化的，一般是不同的
+  MPI_Scatterv(A, counts2, displs2, MPI_DOUBLE, a_this_proc, m_this_proc * n, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
+  MPI_Scatterv(B, counts1, displs1, MPI_DOUBLE, b_this_proc, m_this_proc, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
+  MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  MatVecMul(m_this_proc, n, a_this_proc, b_this_proc, x, c_this_proc);
+
+  MPI_Gatherv(c_this_proc, m_this_proc, MPI_DOUBLE, y, counts1, displs1, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
   MPI_Finalize();
 
-  if (rank != RootID) {
+  delete[] a_this_proc;
+  delete[] b_this_proc;
+  delete[] c_this_proc;
+
+  if (rank != RootId) {
     // 其他进程退出，不要干扰最后的判断
     exit(0);
+  } else {
+    delete[] displs1;
+    delete[] counts1;
+    delete[] displs2;
+    delete[] counts2;
   }
+}
+
+void MatVecEigen(int m, int n, double *A, double *B, double *x, double *y) {
+  auto mat_a = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(A, m, n);
+  auto vec_x = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>>(x, n);
+  auto vec_b = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>>(B, m);
+  Eigen::Matrix<double, Eigen::Dynamic, 1> result = mat_a * vec_x + vec_b;
+  std::memcpy(y, result.data(), m * sizeof(double));
 }

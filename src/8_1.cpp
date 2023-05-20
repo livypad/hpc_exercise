@@ -2,7 +2,7 @@
 
 enum { RootId = 0 };
 
-void MatVecMPICol(int m, int n, double *A, double *B, double *x, double *y) {
+void MatVecMPICol(int m, int n, double *A, const double *B, double *x, double *y) {
   MPI_Init(nullptr, nullptr);
   int rank;
   int size;
