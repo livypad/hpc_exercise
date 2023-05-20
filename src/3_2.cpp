@@ -92,8 +92,8 @@ void MatVecEigen(int m, int n, double *A, double *B, double *x, double *y) {
   // std::memcpy(y, B, sizeof(double) * m);
   // cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, y, 1);
   auto mat_a = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(A, m, n);
-  auto vec_x = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(x, n);
-  auto vec_b = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(B, m);
-  Eigen::Vector<double, Eigen::Dynamic> result = mat_a * vec_x + vec_b;
+  auto vec_x = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>>(x, n);
+  auto vec_b = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>>(B, m);
+  Eigen::Matrix<double, Eigen::Dynamic, 1> result = mat_a * vec_x + vec_b;
   std::memcpy(y, result.data(), m * sizeof(double));
 }

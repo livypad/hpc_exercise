@@ -207,9 +207,9 @@ template void BadGaussSeidel<double>(double *, double *, double *, double, int);
 
 void RowMatrixEigen(double *A, double *B, double *x, int n) {
   auto mat_a = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(A, n, n);
-  auto vec_b = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(B, n);
+  auto vec_b = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>>(B, n);
 
-  Eigen::Vector<double, Eigen::Dynamic> result = mat_a.inverse() * vec_b;
+  Eigen::Matrix<double, Eigen::Dynamic, 1> result = mat_a.inverse() * vec_b;
 
   std::memcpy(x, result.data(), n * sizeof(double));
 }
