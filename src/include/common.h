@@ -59,5 +59,7 @@ struct Struct92 {
 auto Struct92Datatype(Struct92 *x) -> MPI_Datatype;
 auto Struct92Datatype2() -> MPI_Datatype;
 
+auto TriMatrixDatatype(int n, int m, MPI_Datatype old_datatype) -> MPI_Datatype;
+
 auto MyAll2All(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount,
                MPI_Datatype recvtype, MPI_Comm comm) -> int;
