@@ -47,5 +47,12 @@ void BitReverseReOrder(int n, T *array);
 
 void MatVecMPICol(int m, int n, double *A, const double *B, double *x, double *y);
 
+struct Struct92 {
+  int m_[3];
+  float a_[2];
+  char c_[5];
+};
+auto Struct92Datatype(Struct92 *x) -> MPI_Datatype;
+
 auto MyAll2All(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount,
-                MPI_Datatype recvtype, MPI_Comm comm) -> int;
+               MPI_Datatype recvtype, MPI_Comm comm) -> int;
