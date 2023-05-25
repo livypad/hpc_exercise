@@ -14,7 +14,8 @@ void MatAdd(int m, int n, T *A, T *B, T *C);
 template <typename T>
 void MatAddOmp(int m, int n, T *A, T *B, T *C);
 auto PolyResult(int n, const double *a, double x) -> double;
-auto Xn(int n, double x) -> double;
+template <typename T>
+auto Xn(int n, T x) -> T;
 
 template <typename T>
 void MatVecMul(int m, int n, T *A, T *B, T *x, T *y);

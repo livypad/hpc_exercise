@@ -12,5 +12,7 @@ TEST(TEST6_1, RightTest) {
   for (int i = 0; i < n; i++) {
     EXPECT_LT(fabs(res1->real() - res2->real()), 0.00001);
     EXPECT_LT(fabs(res1->imag() - res2->imag()), 0.00001);
+    EXPECT_LT(fabs(Xn<std::complex<double>>(n, *res1).real() - 1), 0.0001);
+    EXPECT_LT(fabs(Xn<std::complex<double>>(n, *res1).imag()), 0.0001);
   }
 }
