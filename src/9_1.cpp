@@ -33,8 +33,8 @@ auto A0020Datatype(int m, int sub_m, int sub_n, MPI_Datatype old_type) -> MPI_Da
   auto block_lengths = new int[sub_n * 2];
   auto displacements = new int[sub_n * 2];
 
-  int tp_size;
-  MPI_Type_size(old_type, &tp_size);
+  int old_type_size;
+  MPI_Type_size(old_type, &old_type_size);
 
   for (int i = 0; i < sub_n; i++) {
     block_lengths[i] = sub_m;
@@ -42,7 +42,7 @@ auto A0020Datatype(int m, int sub_m, int sub_n, MPI_Datatype old_type) -> MPI_Da
   }
   for (int i = sub_n; i < 2 * sub_n; i++) {
     block_lengths[i] = sub_m;
-    displacements[i] = sub_n * m + m * i;
+    displacements[i] = sub_n * m + m * i;  // i的起点是sub_n，因此隐含的包含了从2倍sub_n开始的偏移
   }
 
   MPI_Type_indexed(2 * sub_n, block_lengths, displacements, old_type, &new_datatype);

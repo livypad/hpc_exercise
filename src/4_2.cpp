@@ -62,7 +62,7 @@ void MatVecMPIRow(int m, int n, double *A, double *B, double *x, double *y) {
   auto *b_this_proc = new double[m_this_proc];
   auto *c_this_proc = new double[m_this_proc];
 
-  MPI_Barrier(MPI_COMM_WORLD);  // 等待进程0（root进程）的counts和displs数组设置完成
+  // 等待进程0（root进程）的counts和displs数组设置完成
   // A，B，x需要从进程0（root进程）广播到其他进程，因为每个进程的A，B，x都是随机初始化的，一般是不同的
   MPI_Scatterv(A, counts2, displs2, MPI_DOUBLE, a_this_proc, m_this_proc * n, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
   MPI_Scatterv(B, counts1, displs1, MPI_DOUBLE, b_this_proc, m_this_proc, MPI_DOUBLE, RootId, MPI_COMM_WORLD);
